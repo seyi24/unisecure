@@ -9,8 +9,8 @@ export function Logo({
 }) {
   return (
     <Image
-      src="/codev.png"
-      alt="Codev"
+      src="/unisecure.png"
+      alt="unisecure logo"
       width={size}
       height={size}
       className={className}

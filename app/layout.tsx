@@ -7,12 +7,12 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://codev-by-seyi.vercel.app"),
-  title: "Codev - Your Intelligent Coding Assistant.",
-  description: "Codev is a developer chatbot that helps you with your coding questions. It can answer questions about programming languages, frameworks, libraries, and more. It can also help you with debugging, code reviews, and other coding-related tasks.",
+  metadataBase: new URL("https://unisecure.vercel.app"),
+  title: "Unisecure - Your Cybersecurity Assistant.",
+  description: "Unisecure is a cybersecurity chatbot that helps you with your cybersecurity questions. It can answer questions about threats, protection, best practices, and security concepts for both tech-savvy and non-tech-savvy users.",
   icons: {
-    icon: '/codev.png',
-    shortcut: '/codev.png',
+    icon: '/unisecure.png',
+    shortcut: '/unisecure.png',
   },
 };
 
@@ -64,8 +64,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" href="/codev.png" />
-        <link rel="shortcut icon" href="/codev.png" />
+        <link rel="icon" href="/unisecure.png" />
+        <link rel="shortcut icon" href="/unisecure.png" />
         <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
           dangerouslySetInnerHTML={{

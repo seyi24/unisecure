@@ -127,13 +127,26 @@ export async function POST(request: Request) {
       }
       messagesFromDb = await getMessagesByChatId({ id });
     } else if (message?.role === "user") {
-      await saveChat({
-        id,
-        userId: session.user.id,
-        title: getFallbackChatTitle(message),
-        visibility: selectedVisibilityType,
-      });
-      titlePromise = generateTitleFromUserMessage({ message });
+      try {
+        await saveChat({
+          id,
+          userId: session.user.id,
+          title: getFallbackChatTitle(message),
+          visibility: selectedVisibilityType,
+        });
+        titlePromise = generateTitleFromUserMessage({ message });
+      } catch (_error) {
+        // Chat creation failed, likely due to race condition with another request
+        // Retry loading the chat in case it was created by concurrent request
+        const retryChatId = await getChatById({ id });
+        if (!retryChatId) {
+          throw new ChatbotError(
+            "bad_request:database",
+            "Failed to create or retrieve chat"
+          );
+        }
+        messagesFromDb = await getMessagesByChatId({ id });
+      }
     }
 
     let uiMessages: ChatMessage[];
@@ -262,9 +275,14 @@ export async function POST(request: Request) {
         );
 
         if (titlePromise) {
-          const title = await titlePromise;
-          dataStream.write({ type: "data-chat-title", data: title });
-          updateChatTitleById({ chatId: id, title });
+          try {
+            const title = await titlePromise;
+            dataStream.write({ type: "data-chat-title", data: title });
+            await updateChatTitleById({ chatId: id, title });
+          } catch (_error) {
+            // Title generation failed, but continue without it
+            // The chat will keep its fallback title
+          }
         }
       },
       generateId: generateUUID,
