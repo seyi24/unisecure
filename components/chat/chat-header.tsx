@@ -48,19 +48,20 @@ function PureChatHeader({
         />
       )}
 
-      {/* <Button
+      <Button
         asChild
         className="hidden rounded-lg bg-foreground px-4 text-background hover:bg-foreground/90 md:ml-auto md:flex"
       >
         <Link
-          href="https://vercel.com/templates/next.js/chatbot"
+          href="mailto:unisecure7@gmail.com"
           rel="noopener noreferrer"
-          target="_blank"
         >
-          <VercelIcon size={16} />
-          Deploy with Vercel
+         
+          Contact Support
         </Link>
-      </Button> */}
+      </Button>
+
+      
     </header>
   );
 }

@@ -1,3 +1,14 @@
 {
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "github": {
+    "enabled": true,
+    "autoJobCancelation": true
+  },
+  "meta": {
+    "owner": "Unisecure",
+    "ownerUri": "https://unisecure.com",
+    "supportUri": "mailto:unisecure7@gmail.com",
+    "keywords": ["cybersecurity", "ai", "chatbot", "security"],
+    "description": "Unisecure - Your Cybersecurity Assistant"
+  }
 }
