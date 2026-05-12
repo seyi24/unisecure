@@ -110,6 +110,15 @@ export default function Page() {
           Sign up
         </Link>
       </p>
+      <p className="text-center text-[13px] text-muted-foreground">
+        {"Need a paid plan? "}
+        <Link
+          className="text-foreground underline-offset-4 hover:underline"
+          href="/pricing"
+        >
+          View pricing
+        </Link>
+      </p>
     </>
   );
 }
