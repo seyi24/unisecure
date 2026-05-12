@@ -71,16 +71,16 @@ const plans: Plan[] = [
 
 export function PricingPlans() {
   return (
-    <section className="min-h-dvh bg-[#07090F] px-6 py-14 text-white md:px-10">
+    <section className="min-h-dvh bg-background px-6 py-14 text-foreground md:px-10">
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-10 text-center">
-          <p className="mb-3 inline-flex rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs tracking-wide text-white/70 uppercase">
+          <p className="mb-3 inline-flex rounded-full border border-border bg-muted/40 px-3 py-1 text-xs tracking-wide text-muted-foreground uppercase">
             Subscription Plans
           </p>
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
             Choose your Unisecure plan
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-white/65 md:text-base">
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
             Simple daily limits with better model quality as you scale.
           </p>
         </div>
@@ -89,7 +89,7 @@ export function PricingPlans() {
           {plans.map((plan) => (
             <article
               className={cn(
-                "relative flex h-full flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-[#171B27] to-[#0E111B] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
+                "relative flex h-full flex-col rounded-2xl border border-border bg-gradient-to-b from-card to-background p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
                 plan.highlighted &&
                   "border-violet-400/50 bg-gradient-to-b from-[#2D2750] to-[#17152D] shadow-[0_0_0_1px_rgba(167,139,250,0.3),0_30px_60px_-40px_rgba(167,139,250,0.9)]"
               )}
@@ -104,7 +104,7 @@ export function PricingPlans() {
               <div className="mb-5">
                 <h2 className="text-2xl font-semibold">{plan.name}</h2>
                 <p className="mt-2 text-3xl font-bold tracking-tight">{plan.price}</p>
-                <p className="mt-2 text-sm text-white/70">{plan.description}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
               </div>
 
               <Button
@@ -121,12 +121,12 @@ export function PricingPlans() {
 
               <div className="space-y-4 text-sm">
                 <div>
-                  <p className="mb-2 text-xs font-semibold tracking-wide text-white/60 uppercase">
+                  <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                     Includes
                   </p>
                   <ul className="space-y-2.5">
                     {plan.includes.map((item) => (
-                      <li className="flex items-start gap-2 text-white/85" key={item}>
+                      <li className="flex items-start gap-2 text-foreground/90" key={item}>
                         <CheckIcon className="mt-0.5 size-4 shrink-0 text-emerald-300" />
                         <span>{item}</span>
                       </li>
@@ -134,11 +134,11 @@ export function PricingPlans() {
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3.5">
-                  <p className="mb-2 text-xs font-semibold tracking-wide text-white/60 uppercase">
+                <div className="rounded-xl border border-border bg-muted/30 p-3.5">
+                  <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                     Good For
                   </p>
-                  <ul className="space-y-1.5 text-white/80">
+                  <ul className="space-y-1.5 text-foreground/85">
                     {plan.goodFor.map((item) => (
                       <li key={item}>- {item}</li>
                     ))}
