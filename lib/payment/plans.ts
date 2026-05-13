@@ -11,6 +11,8 @@ export const PLAN_DURATION_DAYS = 30;
 
 export const PAIEMENT_PRO_CURRENCY = "952";
 
+// Codes officiels PaiementPro pour la Côte d'Ivoire.
+// Source : espace marchand PaiementPro.
 export const PAIEMENT_PRO_CHANNELS = [
   {
     id: "CARD",
@@ -18,24 +20,29 @@ export const PAIEMENT_PRO_CHANNELS = [
     description: "Visa, Mastercard",
   },
   {
-    id: "OM",
-    label: "Orange Money",
-    description: "Côte d'Ivoire, Sénégal, Cameroun…",
+    id: "OMCIV2",
+    label: "Orange Money CI",
+    description: "Orange Money — Côte d'Ivoire",
   },
   {
-    id: "MOMO",
-    label: "MTN Mobile Money",
-    description: "MTN MoMo",
+    id: "MOMOCI",
+    label: "MTN MoMo CI",
+    description: "MTN Mobile Money — Côte d'Ivoire",
   },
   {
-    id: "MOOV",
-    label: "Moov Money",
-    description: "Moov Africa",
+    id: "FLOOZ",
+    label: "Moov Money CI",
+    description: "Moov Flooz — Côte d'Ivoire",
   },
   {
-    id: "WAVE",
-    label: "Wave",
-    description: "Wave",
+    id: "WAVECI",
+    label: "Wave CI",
+    description: "Wave — Côte d'Ivoire",
+  },
+  {
+    id: "PAYPAL",
+    label: "PayPal",
+    description: "Paiement international",
   },
 ] as const;
 
