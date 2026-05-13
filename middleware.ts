@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 
-const PUBLIC_PATHS = ["/login", "/register", "/pricing"];
+const PUBLIC_PATHS = ["/login", "/register", "/pricing", "/payment"];
 
 export default auth((req) => {
   const isAuth = !!req.auth;
+  const isAnonymous = req.auth?.user?.isAnonymous === true;
   const pathname = req.nextUrl.pathname;
   const isAuthPage =
     pathname.startsWith("/login") || pathname.startsWith("/register");
@@ -15,7 +16,9 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  if (isAuth && isAuthPage) {
+  // Only kick fully-registered users off the auth pages.
+  // Guests must be able to upgrade their account from /login or /register.
+  if (isAuth && !isAnonymous && isAuthPage) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 

@@ -3,7 +3,12 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { DUMMY_PASSWORD } from "@/lib/constants";
-import { createGuestUser, createUser, getUser } from "@/lib/db/queries";
+import {
+  createGuestUser,
+  createUser,
+  getUser,
+  getUserById,
+} from "@/lib/db/queries";
 import type { UserPlan } from "@/lib/db/schema";
 import { authConfig } from "./auth.config";
 
@@ -15,6 +20,7 @@ declare module "next-auth" {
       id: string;
       type: UserType;
       plan: UserPlan;
+      planExpiresAt: string | null;
       isAnonymous: boolean;
     } & DefaultSession["user"];
   }
@@ -24,6 +30,7 @@ declare module "next-auth" {
     email?: string | null;
     type: UserType;
     plan?: UserPlan;
+    planExpiresAt?: Date | string | null;
     isAnonymous?: boolean;
   }
 }
@@ -33,6 +40,7 @@ declare module "next-auth/jwt" {
     id: string;
     type: UserType;
     plan: UserPlan;
+    planExpiresAt: string | null;
     isAnonymous: boolean;
   }
 }
@@ -78,6 +86,7 @@ export const {
           ...user,
           type: "regular",
           plan: user.plan,
+          planExpiresAt: user.planExpiresAt,
           isAnonymous: user.isAnonymous,
         };
       },
@@ -91,19 +100,24 @@ export const {
           ...guestUser,
           type: "guest",
           plan: "free",
+          planExpiresAt: null,
           isAnonymous: true,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
       if (user) {
         token.id = user.id as string;
         token.type = user.type;
         token.plan = user.plan ?? "free";
+        token.planExpiresAt = user.planExpiresAt
+          ? new Date(user.planExpiresAt).toISOString()
+          : null;
         token.isAnonymous = user.isAnonymous ?? user.type === "guest";
       }
+
       if (account && account.provider === "google") {
         token.type = "regular";
         token.isAnonymous = false;
@@ -112,7 +126,21 @@ export const {
           if (users.length > 0) {
             token.id = users[0].id;
             token.plan = users[0].plan ?? "free";
+            token.planExpiresAt = users[0].planExpiresAt
+              ? users[0].planExpiresAt.toISOString()
+              : null;
           }
+        }
+      }
+
+      if (trigger === "update" && token.id) {
+        const refreshed = await getUserById(token.id);
+        if (refreshed) {
+          token.plan = refreshed.plan ?? "free";
+          token.planExpiresAt = refreshed.planExpiresAt
+            ? refreshed.planExpiresAt.toISOString()
+            : null;
+          token.isAnonymous = refreshed.isAnonymous;
         }
       }
 
@@ -123,6 +151,7 @@ export const {
         session.user.id = token.id;
         session.user.type = token.type;
         session.user.plan = token.plan ?? "free";
+        session.user.planExpiresAt = token.planExpiresAt ?? null;
         session.user.isAnonymous =
           token.isAnonymous ?? token.type === "guest";
       }

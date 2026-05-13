@@ -43,15 +43,42 @@ export const entitlementsByPlan: Record<UserPlan, Entitlements> = {
   },
 };
 
+export function resolveActivePlan({
+  plan,
+  planExpiresAt,
+}: {
+  plan: UserPlan | null | undefined;
+  planExpiresAt: Date | string | null | undefined;
+}): UserPlan {
+  const effective = plan ?? "free";
+  if (effective === "free") {
+    return "free";
+  }
+  if (!planExpiresAt) {
+    return effective;
+  }
+  const expiry =
+    typeof planExpiresAt === "string"
+      ? new Date(planExpiresAt)
+      : planExpiresAt;
+  if (Number.isNaN(expiry.getTime())) {
+    return effective;
+  }
+  return expiry.getTime() > Date.now() ? effective : "free";
+}
+
 export function getEntitlements({
   isAnonymous,
   plan,
+  planExpiresAt,
 }: {
   isAnonymous: boolean;
   plan: UserPlan | null | undefined;
+  planExpiresAt?: Date | string | null | undefined;
 }): Entitlements {
   if (isAnonymous) {
     return guestEntitlements;
   }
-  return entitlementsByPlan[plan ?? "free"];
+  const activePlan = resolveActivePlan({ plan, planExpiresAt });
+  return entitlementsByPlan[activePlan];
 }

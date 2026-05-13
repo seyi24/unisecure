@@ -111,6 +111,7 @@ export async function POST(request: Request) {
     const entitlements = getEntitlements({
       isAnonymous: session.user.isAnonymous,
       plan: session.user.plan,
+      planExpiresAt: session.user.planExpiresAt,
     });
 
     if (session.user.isAnonymous) {

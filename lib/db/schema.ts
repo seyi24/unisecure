@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   json,
   pgTable,
   primaryKey,
@@ -23,11 +24,43 @@ export const user = pgTable("User", {
   image: text("image"),
   isAnonymous: boolean("isAnonymous").notNull().default(false),
   plan: varchar("plan", { enum: userPlans }).notNull().default("free"),
+  planExpiresAt: timestamp("planExpiresAt"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });
 
 export type User = InferSelectModel<typeof user>;
+
+export const paymentStatuses = [
+  "pending",
+  "success",
+  "failed",
+  "cancelled",
+] as const;
+export type PaymentStatus = (typeof paymentStatuses)[number];
+
+export const payment = pgTable("Payment", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  plan: varchar("plan", { enum: userPlans }).notNull(),
+  amount: integer("amount").notNull(),
+  currency: varchar("currency", { length: 8 }).notNull().default("952"),
+  channel: varchar("channel", { length: 32 }).notNull(),
+  referenceNumber: varchar("referenceNumber", { length: 64 }).notNull().unique(),
+  status: varchar("status", { enum: paymentStatuses }).notNull().default("pending"),
+  providerTransactionId: text("providerTransactionId"),
+  customerFirstName: text("customerFirstName"),
+  customerLastName: text("customerLastName"),
+  customerPhoneNumber: text("customerPhoneNumber"),
+  customerEmail: text("customerEmail"),
+  notificationPayload: json("notificationPayload"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type Payment = InferSelectModel<typeof payment>;
 
 export const chat = pgTable("Chat", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),

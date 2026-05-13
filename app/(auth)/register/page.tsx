@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useActionState, useEffect, useState } from "react";
 import { AuthForm } from "@/components/chat/auth-form";
@@ -12,8 +12,21 @@ import { LogoGoogle } from "@/components/chat/icons";
 import { type RegisterActionState, register } from "../actions";
 import { signIn } from "next-auth/react";
 
+const ALLOWED_PLANS = new Set(["free", "starter", "pro", "elite"]);
+
+function buildPostAuthRedirect(plan: string | null): string {
+  if (plan && ALLOWED_PLANS.has(plan) && plan !== "free") {
+    return `/pricing?plan=${plan}`;
+  }
+  return "/";
+}
+
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planParam = searchParams.get("plan");
+  const postAuthRedirect = buildPostAuthRedirect(planParam);
+
   const [email, setEmail] = useState("");
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -40,7 +53,7 @@ export default function Page() {
       toast({ type: "success", description: "Account created!" });
       setIsSuccessful(true);
       updateSession();
-      router.refresh();
+      router.replace(postAuthRedirect);
     }
   }, [state.status]);
 
@@ -54,14 +67,14 @@ export default function Page() {
       setIsGoogleLoading(true);
       const result = await signIn("google", {
         redirect: false,
-        callbackUrl: "/",
+        callbackUrl: postAuthRedirect,
       });
 
       if (result?.error) {
         toast({ type: "error", description: "Failed to sign up with Google" });
       } else if (result?.ok) {
         updateSession();
-        router.refresh();
+        router.replace(postAuthRedirect);
       }
     } catch (error) {
       toast({ type: "error", description: "An error occurred during sign up" });
@@ -104,7 +117,7 @@ export default function Page() {
         {"Have an account? "}
         <Link
           className="text-foreground underline-offset-4 hover:underline"
-          href="/login"
+          href={planParam ? `/login?plan=${planParam}` : "/login"}
         >
           Sign in
         </Link>

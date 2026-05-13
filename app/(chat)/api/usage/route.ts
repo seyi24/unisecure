@@ -28,6 +28,7 @@ export async function GET() {
   const entitlements = getEntitlements({
     isAnonymous: session.user.isAnonymous,
     plan: session.user.plan,
+    planExpiresAt: session.user.planExpiresAt,
   });
 
   let used = 0;

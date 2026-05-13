@@ -24,11 +24,15 @@ import {
   type DBMessage,
   document,
   message,
+  type Payment,
+  payment,
+  type PaymentStatus,
   type Suggestion,
   stream,
   suggestion,
   type User,
   user,
+  type UserPlan,
   vote,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
@@ -662,6 +666,119 @@ export async function createStreamId({
     throw new ChatbotError(
       "bad_request:database",
       "Failed to create stream id"
+    );
+  }
+}
+
+export async function getUserById(id: string): Promise<User | null> {
+  try {
+    const [row] = await db.select().from(user).where(eq(user.id, id)).limit(1);
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to get user by id");
+  }
+}
+
+export async function createPendingPayment(values: {
+  userId: string;
+  plan: UserPlan;
+  amount: number;
+  currency: string;
+  channel: string;
+  referenceNumber: string;
+  customerFirstName: string;
+  customerLastName: string;
+  customerPhoneNumber: string;
+  customerEmail: string;
+}): Promise<Payment> {
+  try {
+    const [row] = await db
+      .insert(payment)
+      .values({
+        userId: values.userId,
+        plan: values.plan,
+        amount: values.amount,
+        currency: values.currency,
+        channel: values.channel,
+        referenceNumber: values.referenceNumber,
+        status: "pending",
+        customerFirstName: values.customerFirstName,
+        customerLastName: values.customerLastName,
+        customerPhoneNumber: values.customerPhoneNumber,
+        customerEmail: values.customerEmail,
+      })
+      .returning();
+    return row;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to create payment record"
+    );
+  }
+}
+
+export async function getPaymentByReference(
+  referenceNumber: string
+): Promise<Payment | null> {
+  try {
+    const [row] = await db
+      .select()
+      .from(payment)
+      .where(eq(payment.referenceNumber, referenceNumber))
+      .limit(1);
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to get payment by reference"
+    );
+  }
+}
+
+export async function updatePaymentStatus(values: {
+  referenceNumber: string;
+  status: PaymentStatus;
+  providerTransactionId?: string | null;
+  notificationPayload?: unknown;
+}): Promise<Payment | null> {
+  try {
+    const [row] = await db
+      .update(payment)
+      .set({
+        status: values.status,
+        providerTransactionId: values.providerTransactionId ?? undefined,
+        notificationPayload: values.notificationPayload ?? undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(payment.referenceNumber, values.referenceNumber))
+      .returning();
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to update payment status"
+    );
+  }
+}
+
+export async function grantUserPlan(values: {
+  userId: string;
+  plan: UserPlan;
+  planExpiresAt: Date;
+}) {
+  try {
+    return await db
+      .update(user)
+      .set({
+        plan: values.plan,
+        planExpiresAt: values.planExpiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, values.userId));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to grant user plan"
     );
   }
 }

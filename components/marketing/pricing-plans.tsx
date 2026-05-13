@@ -2,9 +2,13 @@
 
 import { CheckIcon } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { userPlans } from "@/lib/db/schema";
 import type { UserPlan } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import { CheckoutDialog } from "./checkout-dialog";
 
 type Plan = {
   id: UserPlan;
@@ -79,13 +83,41 @@ const plans: Plan[] = [
 type PricingPlansProps = {
   currentPlan?: UserPlan | null;
   isAuthenticated?: boolean;
+  userEmail?: string | null;
 };
 
 export function PricingPlans({
   currentPlan,
   isAuthenticated,
+  userEmail,
 }: PricingPlansProps) {
+  const [checkoutPlan, setCheckoutPlan] = useState<UserPlan | null>(null);
+  const searchParams = useSearchParams();
+  const autoOpenedRef = useRef(false);
+
+  useEffect(() => {
+    if (autoOpenedRef.current) {
+      return;
+    }
+    if (!isAuthenticated) {
+      return;
+    }
+    const requested = searchParams.get("plan");
+    if (!requested) {
+      return;
+    }
+    if (!(userPlans as readonly string[]).includes(requested)) {
+      return;
+    }
+    if (requested === "free" || requested === currentPlan) {
+      return;
+    }
+    autoOpenedRef.current = true;
+    setCheckoutPlan(requested as UserPlan);
+  }, [isAuthenticated, searchParams, currentPlan]);
+
   return (
+    <>
     <section className="min-h-dvh bg-background px-6 py-14 text-foreground md:px-10">
       <div className="mx-auto w-full max-w-7xl">
         <div className="mb-10 text-center">
@@ -115,14 +147,29 @@ export function PricingPlans({
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan) => {
             const isCurrent = isAuthenticated && currentPlan === plan.id;
-            const ctaHref = isAuthenticated
-              ? `/account/billing?plan=${plan.id}`
-              : `/register?plan=${plan.id}`;
-            const ctaLabel = isCurrent
-              ? "Current plan"
-              : isAuthenticated
-                ? `Choose ${plan.name.replace(" Plan", "")}`
-                : "Sign up to choose";
+            const isFree = plan.id === "free";
+            const opensCheckout = isAuthenticated && !isCurrent && !isFree;
+
+            let ctaLabel: string;
+            if (isCurrent) {
+              ctaLabel = "Current plan";
+            } else if (isFree) {
+              ctaLabel = isAuthenticated ? "Included" : "Get started";
+            } else if (isAuthenticated) {
+              ctaLabel = `Choose ${plan.name.replace(" Plan", "")}`;
+            } else {
+              ctaLabel = "Sign up to choose";
+            }
+
+            const ctaHref = (() => {
+              if (isFree && !isAuthenticated) {
+                return "/register";
+              }
+              if (!isAuthenticated) {
+                return `/register?plan=${plan.id}`;
+              }
+              return "/chat";
+            })();
 
             return (
               <article
@@ -151,7 +198,7 @@ export function PricingPlans({
                 </div>
 
                 <Button
-                  asChild={!isCurrent}
+                  asChild={!(isCurrent || opensCheckout)}
                   className={cn(
                     "mb-5 h-10 rounded-xl text-sm font-medium",
                     isCurrent
@@ -161,9 +208,14 @@ export function PricingPlans({
                         : "bg-white text-black hover:bg-white/90"
                   )}
                   disabled={isCurrent}
+                  onClick={
+                    opensCheckout
+                      ? () => setCheckoutPlan(plan.id)
+                      : undefined
+                  }
                   type="button"
                 >
-                  {isCurrent ? (
+                  {isCurrent || opensCheckout ? (
                     <span>{ctaLabel}</span>
                   ) : (
                     <Link href={ctaHref}>{ctaLabel}</Link>
@@ -205,5 +257,17 @@ export function PricingPlans({
         </div>
       </div>
     </section>
+
+    <CheckoutDialog
+      defaultEmail={userEmail ?? undefined}
+      onOpenChange={(next) => {
+        if (!next) {
+          setCheckoutPlan(null);
+        }
+      }}
+      open={checkoutPlan !== null}
+      plan={checkoutPlan}
+    />
+    </>
   );
 }

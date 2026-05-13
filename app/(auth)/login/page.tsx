@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useActionState, useEffect, useState } from "react";
 
@@ -13,8 +13,21 @@ import { LogoGoogle } from "@/components/chat/icons";
 import { type LoginActionState, login } from "../actions";
 import { signIn } from "next-auth/react";
 
+const ALLOWED_PLANS = new Set(["starter", "pro", "elite"]);
+
+function buildPostAuthRedirect(plan: string | null): string {
+  if (plan && ALLOWED_PLANS.has(plan)) {
+    return `/pricing?plan=${plan}`;
+  }
+  return "/";
+}
+
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const planParam = searchParams.get("plan");
+  const postAuthRedirect = buildPostAuthRedirect(planParam);
+
   const [email, setEmail] = useState("");
   const [isSuccessful, setIsSuccessful] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -38,7 +51,7 @@ export default function Page() {
     } else if (state.status === "success") {
       setIsSuccessful(true);
       updateSession();
-      router.refresh();
+      router.replace(postAuthRedirect);
     }
   }, [state.status]);
 
@@ -52,14 +65,14 @@ export default function Page() {
       setIsGoogleLoading(true);
       const result = await signIn("google", {
         redirect: false,
-        callbackUrl: "/",
+        callbackUrl: postAuthRedirect,
       });
 
       if (result?.error) {
         toast({ type: "error", description: "Failed to sign in with Google" });
       } else if (result?.ok) {
         updateSession();
-        router.refresh();
+        router.replace(postAuthRedirect);
       }
     } catch (error) {
       toast({ type: "error", description: "An error occurred during sign in" });
@@ -105,7 +118,7 @@ export default function Page() {
         {"No account? "}
         <Link
           className="text-foreground underline-offset-4 hover:underline"
-          href="/register"
+          href={planParam ? `/register?plan=${planParam}` : "/register"}
         >
           Sign up
         </Link>
