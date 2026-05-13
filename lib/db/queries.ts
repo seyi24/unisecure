@@ -18,6 +18,7 @@ import type { ArtifactKind } from "@/components/chat/artifact";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { ChatbotError } from "../errors";
 import { generateUUID } from "../utils";
+import { getDatabaseUrl, getPostgresClientOptions } from "./database-url";
 import {
   type Chat,
   chat,
@@ -37,7 +38,15 @@ import {
 } from "./schema";
 import { generateHashedPassword } from "./utils";
 
-const client = postgres(process.env.POSTGRES_URL ?? "");
+const connectionString = getDatabaseUrl() ?? "";
+
+if (process.env.NODE_ENV === "production" && !connectionString) {
+  throw new Error(
+    "Database URL missing: set POSTGRES_URL or DATABASE_URL in production."
+  );
+}
+
+const client = postgres(connectionString, getPostgresClientOptions(connectionString));
 const db = drizzle(client);
 
 export async function getUser(email: string): Promise<User[]> {
