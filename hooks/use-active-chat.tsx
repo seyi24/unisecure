@@ -47,6 +47,8 @@ type ActiveChatContextValue = {
   setCurrentModelId: (id: string) => void;
   showCreditCardAlert: boolean;
   setShowCreditCardAlert: Dispatch<SetStateAction<boolean>>;
+  showGuestSignupPrompt: boolean;
+  setShowGuestSignupPrompt: Dispatch<SetStateAction<boolean>>;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
@@ -81,6 +83,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
 
   const [input, setInput] = useState("");
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
+  const [showGuestSignupPrompt, setShowGuestSignupPrompt] = useState(false);
 
   const { data: chatData, isLoading } = useSWR(
     isNewChat
@@ -161,6 +164,10 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       if (error.message?.includes("AI Gateway requires a valid credit card")) {
         setShowCreditCardAlert(true);
       } else if (error instanceof ChatbotError) {
+        if (error.surface === "guest" && error.type === "rate_limit") {
+          setShowGuestSignupPrompt(true);
+          return;
+        }
         toast({ type: "error", description: error.message });
       } else {
         toast({
@@ -264,6 +271,8 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       setCurrentModelId,
       showCreditCardAlert,
       setShowCreditCardAlert,
+      showGuestSignupPrompt,
+      setShowGuestSignupPrompt,
     }),
     [
       chatId,
@@ -282,6 +291,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       votes,
       currentModelId,
       showCreditCardAlert,
+      showGuestSignupPrompt,
     ]
   );
 

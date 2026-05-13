@@ -11,6 +11,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
+export const userPlans = ["free", "starter", "pro", "elite"] as const;
+export type UserPlan = (typeof userPlans)[number];
+
 export const user = pgTable("User", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
   email: varchar("email", { length: 64 }).notNull(),
@@ -19,6 +22,7 @@ export const user = pgTable("User", {
   emailVerified: boolean("emailVerified").notNull().default(false),
   image: text("image"),
   isAnonymous: boolean("isAnonymous").notNull().default(false),
+  plan: varchar("plan", { enum: userPlans }).notNull().default("free"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 });

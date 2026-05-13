@@ -1,10 +1,13 @@
 "use client";
 
 import { CheckIcon } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import type { UserPlan } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 
 type Plan = {
+  id: UserPlan;
   name: string;
   price: string;
   description: string;
@@ -15,6 +18,7 @@ type Plan = {
 
 const plans: Plan[] = [
   {
+    id: "free",
     name: "Free Plan",
     price: "0 FCFA",
     description: "Start exploring cybersecurity with essential AI guidance.",
@@ -27,6 +31,7 @@ const plans: Plan[] = [
     goodFor: ["Testing the platform", "Casual users"],
   },
   {
+    id: "starter",
     name: "Starter Plan",
     price: "499 FCFA",
     description: "A balanced plan for steady daily learning.",
@@ -40,6 +45,7 @@ const plans: Plan[] = [
     goodFor: ["Students learning cybersecurity basics"],
   },
   {
+    id: "pro",
     name: "Pro Plan",
     price: "999 FCFA",
     description: "More depth and precision for serious growth.",
@@ -54,6 +60,7 @@ const plans: Plan[] = [
     highlighted: true,
   },
   {
+    id: "elite",
     name: "Elite Plan",
     price: "1,499 FCFA",
     description: "Maximum performance and premium AI experience.",
@@ -69,7 +76,15 @@ const plans: Plan[] = [
   },
 ];
 
-export function PricingPlans() {
+type PricingPlansProps = {
+  currentPlan?: UserPlan | null;
+  isAuthenticated?: boolean;
+};
+
+export function PricingPlans({
+  currentPlan,
+  isAuthenticated,
+}: PricingPlansProps) {
   return (
     <section className="min-h-dvh bg-background px-6 py-14 text-foreground md:px-10">
       <div className="mx-auto w-full max-w-7xl">
@@ -83,70 +98,110 @@ export function PricingPlans() {
           <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
             Simple daily limits with better model quality as you scale.
           </p>
+          {!isAuthenticated && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Already signed up?{" "}
+              <Link
+                className="text-foreground underline underline-offset-4 hover:opacity-90"
+                href="/login"
+              >
+                Sign in
+              </Link>{" "}
+              to manage your plan.
+            </p>
+          )}
         </div>
 
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {plans.map((plan) => (
-            <article
-              className={cn(
-                "relative flex h-full flex-col rounded-2xl border border-border bg-gradient-to-b from-card to-background p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
-                plan.highlighted &&
-                  "border-violet-400/50 bg-gradient-to-b from-[#2D2750] to-[#17152D] shadow-[0_0_0_1px_rgba(167,139,250,0.3),0_30px_60px_-40px_rgba(167,139,250,0.9)]"
-              )}
-              key={plan.name}
-            >
-              {plan.highlighted ? (
-                <span className="absolute top-4 right-4 rounded-full bg-violet-400/20 px-2.5 py-1 text-[10px] font-medium tracking-wide text-violet-200 uppercase">
-                  Popular
-                </span>
-              ) : null}
+          {plans.map((plan) => {
+            const isCurrent = isAuthenticated && currentPlan === plan.id;
+            const ctaHref = isAuthenticated
+              ? `/account/billing?plan=${plan.id}`
+              : `/register?plan=${plan.id}`;
+            const ctaLabel = isCurrent
+              ? "Current plan"
+              : isAuthenticated
+                ? `Choose ${plan.name.replace(" Plan", "")}`
+                : "Sign up to choose";
 
-              <div className="mb-5">
-                <h2 className="text-2xl font-semibold">{plan.name}</h2>
-                <p className="mt-2 text-3xl font-bold tracking-tight">{plan.price}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
-              </div>
-
-              <Button
+            return (
+              <article
                 className={cn(
-                  "mb-5 h-10 rounded-xl text-sm font-medium",
-                  plan.highlighted
-                    ? "bg-violet-500 text-white hover:bg-violet-400"
-                    : "bg-white text-black hover:bg-white/90"
+                  "relative flex h-full flex-col rounded-2xl border border-border bg-gradient-to-b from-card to-background p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]",
+                  plan.highlighted &&
+                    "border-violet-400/50 bg-gradient-to-b from-[#2D2750] to-[#17152D] shadow-[0_0_0_1px_rgba(167,139,250,0.3),0_30px_60px_-40px_rgba(167,139,250,0.9)]",
+                  isCurrent && "ring-2 ring-emerald-400/40"
                 )}
-                type="button"
+                key={plan.id}
               >
-                Choose {plan.name.replace(" Plan", "")}
-              </Button>
+                {plan.highlighted ? (
+                  <span className="absolute top-4 right-4 rounded-full bg-violet-400/20 px-2.5 py-1 text-[10px] font-medium tracking-wide text-violet-200 uppercase">
+                    Popular
+                  </span>
+                ) : null}
 
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    Includes
+                <div className="mb-5">
+                  <h2 className="text-2xl font-semibold">{plan.name}</h2>
+                  <p className="mt-2 text-3xl font-bold tracking-tight">
+                    {plan.price}
                   </p>
-                  <ul className="space-y-2.5">
-                    {plan.includes.map((item) => (
-                      <li className="flex items-start gap-2 text-foreground/90" key={item}>
-                        <CheckIcon className="mt-0.5 size-4 shrink-0 text-emerald-300" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {plan.description}
+                  </p>
                 </div>
 
-                <div className="rounded-xl border border-border bg-muted/30 p-3.5">
-                  <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    Good For
-                  </p>
-                  <ul className="space-y-1.5 text-foreground/85">
-                    {plan.goodFor.map((item) => (
-                      <li key={item}>- {item}</li>
-                    ))}
-                  </ul>
+                <Button
+                  asChild={!isCurrent}
+                  className={cn(
+                    "mb-5 h-10 rounded-xl text-sm font-medium",
+                    isCurrent
+                      ? "bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/20 cursor-default"
+                      : plan.highlighted
+                        ? "bg-violet-500 text-white hover:bg-violet-400"
+                        : "bg-white text-black hover:bg-white/90"
+                  )}
+                  disabled={isCurrent}
+                  type="button"
+                >
+                  {isCurrent ? (
+                    <span>{ctaLabel}</span>
+                  ) : (
+                    <Link href={ctaHref}>{ctaLabel}</Link>
+                  )}
+                </Button>
+
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                      Includes
+                    </p>
+                    <ul className="space-y-2.5">
+                      {plan.includes.map((item) => (
+                        <li
+                          className="flex items-start gap-2 text-foreground/90"
+                          key={item}
+                        >
+                          <CheckIcon className="mt-0.5 size-4 shrink-0 text-emerald-300" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-muted/30 p-3.5">
+                    <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                      Good For
+                    </p>
+                    <ul className="space-y-1.5 text-foreground/85">
+                      {plan.goodFor.map((item) => (
+                        <li key={item}>- {item}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

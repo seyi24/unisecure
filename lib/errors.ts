@@ -16,7 +16,8 @@ export type Surface =
   | "vote"
   | "document"
   | "suggestions"
-  | "activate_gateway";
+  | "activate_gateway"
+  | "guest";
 
 export type ErrorCode = `${ErrorType}:${Surface}`;
 
@@ -33,6 +34,7 @@ export const visibilityBySurface: Record<Surface, ErrorVisibility> = {
   document: "response",
   suggestions: "response",
   activate_gateway: "response",
+  guest: "response",
 };
 
 export class ChatbotError extends Error {
@@ -93,7 +95,13 @@ export function getMessageByErrorCode(errorCode: ErrorCode): string {
       return "Your account does not have access to this feature.";
 
     case "rate_limit:chat":
-      return "You've reached the message limit. Come back in 1 hour to continue chatting.";
+      return "You've reached your daily message limit. Upgrade your plan or come back tomorrow.";
+    case "rate_limit:guest":
+      return "You've used your free questions. Create a free account to keep chatting.";
+    case "unauthorized:guest":
+      return "Create a free account to continue this conversation.";
+    case "forbidden:guest":
+      return "Sign in to use this feature.";
     case "not_found:chat":
       return "The requested chat was not found. Please check the chat ID and try again.";
     case "forbidden:chat":

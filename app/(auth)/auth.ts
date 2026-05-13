@@ -4,6 +4,7 @@ import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import { createGuestUser, createUser, getUser } from "@/lib/db/queries";
+import type { UserPlan } from "@/lib/db/schema";
 import { authConfig } from "./auth.config";
 
 export type UserType = "guest" | "regular";
@@ -13,6 +14,8 @@ declare module "next-auth" {
     user: {
       id: string;
       type: UserType;
+      plan: UserPlan;
+      isAnonymous: boolean;
     } & DefaultSession["user"];
   }
 
@@ -20,6 +23,8 @@ declare module "next-auth" {
     id?: string;
     email?: string | null;
     type: UserType;
+    plan?: UserPlan;
+    isAnonymous?: boolean;
   }
 }
 
@@ -27,6 +32,8 @@ declare module "next-auth/jwt" {
   interface JWT extends DefaultJWT {
     id: string;
     type: UserType;
+    plan: UserPlan;
+    isAnonymous: boolean;
   }
 }
 
@@ -67,7 +74,12 @@ export const {
           return null;
         }
 
-        return { ...user, type: "regular" };
+        return {
+          ...user,
+          type: "regular",
+          plan: user.plan,
+          isAnonymous: user.isAnonymous,
+        };
       },
     }),
     Credentials({
@@ -75,7 +87,12 @@ export const {
       credentials: {},
       async authorize() {
         const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: "guest" };
+        return {
+          ...guestUser,
+          type: "guest",
+          plan: "free",
+          isAnonymous: true,
+        };
       },
     }),
   ],
@@ -84,15 +101,17 @@ export const {
       if (user) {
         token.id = user.id as string;
         token.type = user.type;
+        token.plan = user.plan ?? "free";
+        token.isAnonymous = user.isAnonymous ?? user.type === "guest";
       }
-      // Handle OAuth sign in
       if (account && account.provider === "google") {
         token.type = "regular";
-        // Get user id from database
+        token.isAnonymous = false;
         if (token.email) {
           const users = await getUser(token.email);
           if (users.length > 0) {
             token.id = users[0].id;
+            token.plan = users[0].plan ?? "free";
           }
         }
       }
@@ -103,6 +122,9 @@ export const {
       if (session.user) {
         session.user.id = token.id;
         session.user.type = token.type;
+        session.user.plan = token.plan ?? "free";
+        session.user.isAnonymous =
+          token.isAnonymous ?? token.type === "guest";
       }
 
       return session;

@@ -10,8 +10,11 @@ import {
 import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
-import { auth, type UserType } from "@/app/(auth)/auth";
-import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import { auth } from "@/app/(auth)/auth";
+import {
+  getEntitlements,
+  GUEST_LIFETIME_MESSAGE_LIMIT,
+} from "@/lib/ai/entitlements";
 import {
   allowedModelIds,
   chatModels,
@@ -30,7 +33,8 @@ import {
   createStreamId,
   deleteChatById,
   getChatById,
-  getMessageCountByUserId,
+  getLifetimeMessageCountByUserId,
+  getMessageCountByUserIdSince,
   getMessagesByChatId,
   saveChat,
   saveMessages,
@@ -104,15 +108,28 @@ export async function POST(request: Request) {
 
     await checkIpRateLimit(ipAddress(request));
 
-    const userType: UserType = session.user.type;
-
-    const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
-      differenceInHours: 1,
+    const entitlements = getEntitlements({
+      isAnonymous: session.user.isAnonymous,
+      plan: session.user.plan,
     });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerHour) {
-      return new ChatbotError("rate_limit:chat").toResponse();
+    if (session.user.isAnonymous) {
+      const lifetimeCount = await getLifetimeMessageCountByUserId({
+        id: session.user.id,
+      });
+      if (lifetimeCount >= GUEST_LIFETIME_MESSAGE_LIMIT) {
+        return new ChatbotError("rate_limit:guest").toResponse();
+      }
+    } else {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const dailyCount = await getMessageCountByUserIdSince({
+        id: session.user.id,
+        since: startOfDay,
+      });
+      if (dailyCount >= entitlements.maxMessagesPerDay) {
+        return new ChatbotError("rate_limit:chat").toResponse();
+      }
     }
 
     const isToolApprovalFlow = Boolean(messages);

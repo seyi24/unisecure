@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/app/(auth)/auth";
+import { getEntitlements } from "@/lib/ai/entitlements";
 
 const FileSchema = z.object({
   file: z
@@ -18,8 +19,24 @@ const FileSchema = z.object({
 export async function POST(request: Request) {
   const session = await auth();
 
-  if (!session) {
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const entitlements = getEntitlements({
+    isAnonymous: session.user.isAnonymous,
+    plan: session.user.plan,
+  });
+
+  if (!entitlements.canUploadFiles) {
+    return NextResponse.json(
+      {
+        error: session.user.isAnonymous
+          ? "Sign up to upload files."
+          : "Your plan doesn't support file uploads. Upgrade to Starter or higher.",
+      },
+      { status: 403 }
+    );
   }
 
   if (request.body === null) {
