@@ -50,7 +50,11 @@ export class ChatbotError extends Error {
     this.type = type as ErrorType;
     this.cause = cause;
     this.surface = surface as Surface;
-    this.message = getMessageByErrorCode(errorCode);
+    const baseMessage = getMessageByErrorCode(errorCode);
+    this.message =
+      errorCode.endsWith(":database") && cause
+        ? `${baseMessage} ${cause}`
+        : baseMessage;
     this.statusCode = getStatusCodeByType(this.type);
   }
 

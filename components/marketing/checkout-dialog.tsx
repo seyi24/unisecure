@@ -168,7 +168,7 @@ export function CheckoutDialog({
                 autoComplete="given-name"
                 id="checkout-firstName"
                 onChange={(event) => setFirstName(event.target.value)}
-                placeholder="Aïcha"
+                placeholder="Tiamiyu"
                 required
                 value={firstName}
               />
@@ -179,7 +179,7 @@ export function CheckoutDialog({
                 autoComplete="family-name"
                 id="checkout-lastName"
                 onChange={(event) => setLastName(event.target.value)}
-                placeholder="Diallo"
+                placeholder="Rokeebah"
                 required
                 value={lastName}
               />

@@ -19,6 +19,7 @@ import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { ChatbotError } from "../errors";
 import { generateUUID } from "../utils";
 import { getDatabaseUrl, getPostgresClientOptions } from "./database-url";
+import { formatDbQueryError } from "./format-db-error";
 import {
   type Chat,
   chat,
@@ -84,10 +85,10 @@ export async function createGuestUser() {
         plan: user.plan,
         isAnonymous: user.isAnonymous,
       });
-  } catch (_error) {
+  } catch (error) {
     throw new ChatbotError(
       "bad_request:database",
-      "Failed to create guest user"
+      `Failed to create guest user: ${formatDbQueryError(error)}`
     );
   }
 }
