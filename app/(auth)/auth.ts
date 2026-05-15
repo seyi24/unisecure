@@ -95,14 +95,22 @@ export const {
       id: "guest",
       credentials: {},
       async authorize() {
-        const [guestUser] = await createGuestUser();
-        return {
-          ...guestUser,
-          type: "guest",
-          plan: "free",
-          planExpiresAt: null,
-          isAnonymous: true,
-        };
+        try {
+          const [guestUser] = await createGuestUser();
+          return {
+            ...guestUser,
+            type: "guest",
+            plan: "free",
+            planExpiresAt: null,
+            isAnonymous: true,
+          };
+        } catch (error) {
+          console.error(
+            "=== GUEST ERROR ===",
+            JSON.stringify(error, Object.getOwnPropertyNames(error))
+          );
+          return null;
+        }
       },
     }),
   ],
@@ -159,18 +167,15 @@ export const {
       return session;
     },
     async signIn({ user, account, profile }) {
-      // Allow credentials provider
       if (!account) {
         return true;
       }
 
-      // Handle OAuth provider (Google)
       if (account.provider === "google" && profile?.email) {
         try {
           const existingUsers = await getUser(profile.email);
 
           if (existingUsers.length === 0) {
-            // Create new user from Google profile
             await createUser(profile.email, "");
           }
 
