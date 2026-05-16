@@ -21,7 +21,8 @@ type GuestSignupPromptProps = {
 const benefits = [
   "More daily questions (5–50 depending on plan)",
   "Chat history saved across devices",
-  "File uploads on Pro plan & premium AI models",
+  "File uploads & voice mode on Pro plan",
+  "Premium AI models",
   "Personalized cybersecurity recommendations",
 ];
 

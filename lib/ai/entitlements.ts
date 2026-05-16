@@ -4,6 +4,7 @@ export type Entitlements = {
   maxMessagesPerDay: number;
   canSaveHistory: boolean;
   canUploadFiles: boolean;
+  canUseVoiceMode: boolean;
   hasPremiumModels: boolean;
 };
 
@@ -13,6 +14,7 @@ export const guestEntitlements: Entitlements = {
   maxMessagesPerDay: GUEST_LIFETIME_MESSAGE_LIMIT,
   canSaveHistory: false,
   canUploadFiles: false,
+  canUseVoiceMode: false,
   hasPremiumModels: false,
 };
 
@@ -21,24 +23,28 @@ export const entitlementsByPlan: Record<UserPlan, Entitlements> = {
     maxMessagesPerDay: 5,
     canSaveHistory: true,
     canUploadFiles: false,
+    canUseVoiceMode: false,
     hasPremiumModels: false,
   },
   starter: {
     maxMessagesPerDay: 15,
     canSaveHistory: true,
     canUploadFiles: false,
+    canUseVoiceMode: false,
     hasPremiumModels: false,
   },
   pro: {
     maxMessagesPerDay: 30,
     canSaveHistory: true,
     canUploadFiles: true,
+    canUseVoiceMode: true,
     hasPremiumModels: true,
   },
   elite: {
     maxMessagesPerDay: 50,
     canSaveHistory: true,
     canUploadFiles: true,
+    canUseVoiceMode: true,
     hasPremiumModels: true,
   },
 };

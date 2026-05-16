@@ -40,6 +40,7 @@ import {
   slashCommands,
 } from "./slash-commands";
 import { SuggestedActions } from "./suggested-actions";
+import { VoiceModeButton } from "./voice-mode-button";
 import type { VisibilityType } from "@/lib/types";
 
 function PureMultimodalInput({
@@ -82,11 +83,13 @@ function PureMultimodalInput({
   const router = useRouter();
   // const { setTheme, resolvedTheme } = useTheme();
   const { data: session } = useSession();
-  const canUploadFiles = getEntitlements({
+  const entitlements = getEntitlements({
     isAnonymous: session?.user?.isAnonymous ?? true,
     plan: session?.user?.plan,
     planExpiresAt: session?.user?.planExpiresAt,
-  }).canUploadFiles;
+  });
+  const canUploadFiles = entitlements.canUploadFiles;
+  const canUseVoiceMode = entitlements.canUseVoiceMode;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
   const hasAutoFocused = useRef(false);
@@ -502,6 +505,21 @@ function PureMultimodalInput({
               fileInputRef={fileInputRef}
               isAnonymous={session?.user?.isAnonymous ?? true}
               selectedModelId={selectedModelId}
+              status={status}
+            />
+            <VoiceModeButton
+              canUseVoiceMode={canUseVoiceMode}
+              isAnonymous={session?.user?.isAnonymous ?? true}
+              onTranscript={(text, isFinal) => {
+                if (!isFinal || !text) {
+                  return;
+                }
+                setInput((previous) => {
+                  const trimmed = previous.trimEnd();
+                  return trimmed ? `${trimmed} ${text}` : text;
+                });
+                textareaRef.current?.focus();
+              }}
               status={status}
             />
           </PromptInputTools>

@@ -57,6 +57,7 @@ const plans: Plan[] = [
       "30 questions daily",
       "GPT-4o",
       "Image file uploads (JPEG & PNG)",
+      "Voice mode (speak your questions)",
       "Advanced cybersecurity answers",
       "More accurate explanations",
       "Priority responses",
@@ -72,6 +73,7 @@ const plans: Plan[] = [
     includes: [
       "50 questions daily",
       "GPT-4 Turbo or latest premium model",
+      "Voice mode (speak your questions)",
       "Highest quality responses",
       "Fastest speed",
       "Early feature access",
