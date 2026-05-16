@@ -10,6 +10,7 @@ import {
   LockIcon,
   WrenchIcon,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -36,6 +37,7 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector";
+import { getEntitlements } from "@/lib/ai/entitlements";
 import {
   type ChatModel,
   chatModels,
@@ -109,6 +111,12 @@ function PureMultimodalInput({
 }) {
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
+  const { data: session } = useSession();
+  const canUploadFiles = getEntitlements({
+    isAnonymous: session?.user?.isAnonymous ?? true,
+    plan: session?.user?.plan,
+    planExpiresAt: session?.user?.planExpiresAt,
+  }).canUploadFiles;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
   const hasAutoFocused = useRef(false);
@@ -314,6 +322,10 @@ function PureMultimodalInput({
 
   const handlePaste = useCallback(
     async (event: ClipboardEvent) => {
+      if (!canUploadFiles) {
+        return;
+      }
+
       const items = event.clipboardData?.items;
       if (!items) {
         return;
@@ -355,7 +367,7 @@ function PureMultimodalInput({
         setUploadQueue([]);
       }
     },
-    [setAttachments, uploadFile]
+    [canUploadFiles, setAttachments, uploadFile]
   );
 
   useEffect(() => {
@@ -399,6 +411,7 @@ function PureMultimodalInput({
         )}
 
       <input
+        accept="image/jpeg,image/png"
         className="pointer-events-none fixed -top-4 -left-4 size-0.5 opacity-0"
         multiple
         onChange={handleFileChange}
@@ -518,7 +531,9 @@ function PureMultimodalInput({
         <PromptInputFooter className="px-3 pb-3">
           <PromptInputTools>
             <AttachmentsButton
+              canUploadFiles={canUploadFiles}
               fileInputRef={fileInputRef}
+              isAnonymous={session?.user?.isAnonymous ?? true}
               selectedModelId={selectedModelId}
               status={status}
             />
@@ -534,12 +549,15 @@ function PureMultimodalInput({
             <PromptInputSubmit
               className={cn(
                 "h-7 w-7 rounded-xl transition-all duration-200",
-                input.trim()
+                input.trim() || attachments.length > 0
                   ? "bg-foreground text-background hover:opacity-85 active:scale-95"
                   : "bg-muted text-muted-foreground/25 cursor-not-allowed"
               )}
               data-testid="send-button"
-              disabled={!input.trim() || uploadQueue.length > 0}
+              disabled={
+                (!input.trim() && attachments.length === 0) ||
+                uploadQueue.length > 0
+              }
               status={status}
               variant="secondary"
             >
@@ -588,10 +606,14 @@ function PureAttachmentsButton({
   fileInputRef,
   status,
   selectedModelId,
+  canUploadFiles,
+  isAnonymous,
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
   status: UseChatHelpers<ChatMessage>["status"];
   selectedModelId: string;
+  canUploadFiles: boolean;
+  isAnonymous: boolean;
 }) {
   const { data: modelsResponse } = useSWR(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
@@ -602,21 +624,57 @@ function PureAttachmentsButton({
   const caps: Record<string, ModelCapabilities> | undefined =
     modelsResponse?.capabilities ?? modelsResponse;
   const hasVision = caps?.[selectedModelId]?.vision ?? false;
+  const isInteractive = status === "ready" && hasVision;
+
+  const showUploadBlockedToast = () => {
+    if (isAnonymous) {
+      toast.error("Sign up and upgrade to Pro to upload files.", {
+        action: {
+          label: "Create account",
+          onClick: () => {
+            window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/register`;
+          },
+        },
+      });
+      return;
+    }
+
+    toast.error("File uploads are available on the Pro plan.", {
+      action: {
+        label: "View plans",
+        onClick: () => {
+          window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/pricing`;
+        },
+      },
+    });
+  };
 
   return (
     <Button
       className={cn(
         "h-7 w-7 rounded-lg border border-border/40 p-1 transition-colors",
-        hasVision
+        isInteractive
           ? "text-foreground hover:border-border hover:text-foreground"
           : "text-muted-foreground/30 cursor-not-allowed"
       )}
       data-testid="attachments-button"
-      disabled={status !== "ready" || !hasVision}
+      disabled={!isInteractive}
       onClick={(event) => {
         event.preventDefault();
+        if (!canUploadFiles) {
+          showUploadBlockedToast();
+          return;
+        }
         fileInputRef.current?.click();
       }}
+      title={
+        !hasVision
+          ? "Selected model does not support images"
+          : canUploadFiles
+            ? "Upload image"
+            : "Pro plan required for file uploads"
+      }
+      type="button"
       variant="ghost"
     >
       <PaperclipIcon size={14} style={{ width: 14, height: 14 }} />

@@ -114,6 +114,12 @@ export async function POST(request: Request) {
       planExpiresAt: session.user.planExpiresAt,
     });
 
+    const messageHasFiles = message?.parts.some((part) => part.type === "file");
+
+    if (messageHasFiles && !entitlements.canUploadFiles) {
+      return new ChatbotError("forbidden:api").toResponse();
+    }
+
     if (session.user.isAnonymous) {
       const lifetimeCount = await getLifetimeMessageCountByUserId({
         id: session.user.id,

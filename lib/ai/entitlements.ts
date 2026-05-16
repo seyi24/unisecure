@@ -26,7 +26,7 @@ export const entitlementsByPlan: Record<UserPlan, Entitlements> = {
   starter: {
     maxMessagesPerDay: 15,
     canSaveHistory: true,
-    canUploadFiles: true,
+    canUploadFiles: false,
     hasPremiumModels: false,
   },
   pro: {

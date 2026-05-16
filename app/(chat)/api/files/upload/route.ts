@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       {
         error: session.user.isAnonymous
           ? "Sign up to upload files."
-          : "Your plan doesn't support file uploads. Upgrade to Starter or higher.",
+          : "File uploads are available on the Pro plan and above.",
       },
       { status: 403 }
     );

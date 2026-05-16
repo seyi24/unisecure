@@ -97,6 +97,8 @@ export function getMessageByErrorCode(errorCode: ErrorCode): string {
       return "You need to sign in before continuing.";
     case "forbidden:auth":
       return "Your account does not have access to this feature.";
+    case "forbidden:api":
+      return "File uploads are available on the Pro plan and above.";
 
     case "rate_limit:chat":
       return "You've reached your daily message limit. Upgrade your plan or come back tomorrow.";

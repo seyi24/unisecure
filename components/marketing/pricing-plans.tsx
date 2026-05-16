@@ -56,6 +56,7 @@ const plans: Plan[] = [
     includes: [
       "30 questions daily",
       "GPT-4o",
+      "Image file uploads (JPEG & PNG)",
       "Advanced cybersecurity answers",
       "More accurate explanations",
       "Priority responses",
