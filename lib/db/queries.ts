@@ -15,7 +15,7 @@ import {
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import type { ArtifactKind } from "@/components/chat/artifact";
-import type { VisibilityType } from "@/components/chat/visibility-selector";
+import type { VisibilityType } from "@/lib/types";
 import { ChatbotError } from "../errors";
 import { generateUUID } from "../utils";
 import { getDatabaseUrl, getPostgresClientOptions } from "./database-url";
