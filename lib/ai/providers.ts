@@ -20,8 +20,10 @@ export function getLanguageModel(modelId: string) {
     return myProvider.languageModel(modelId);
   }
 
-  // For OpenAI models, use openai provider directly
-  if (modelId.startsWith("openai/")) {
+  // Use the OpenAI SDK only when a direct API key is configured (typical locally).
+  // On Vercel, AI Gateway auth is automatic via OIDC — no OPENAI_API_KEY required.
+  const openAiApiKey = process.env.OPENAI_API_KEY?.trim();
+  if (modelId.startsWith("openai/") && openAiApiKey) {
     return openai(modelId.replace("openai/", ""));
   }
 
