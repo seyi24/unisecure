@@ -1,6 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
-import Google from "next-auth/providers/google";
-import { createUser, getUser } from "@/lib/db/queries";
+import type { UserPlan } from "@/lib/db/schema";
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -11,25 +10,37 @@ export const authConfig = {
     signIn: `${base}/login`,
     newUser: `${base}/`,
   },
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-  ],
+  providers: [],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "google" && user.email) {
-        // Check if user exists, if not create one
-        const existingUsers = await getUser(user.email);
-        if (existingUsers.length === 0) {
-          // Create user without password for OAuth
-          await createUser(user.email);
-        }
-        return true;
+    jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id as string;
+        token.type = user.type;
+        token.plan = (user.plan ?? "free") as UserPlan;
+        token.planExpiresAt = user.planExpiresAt
+          ? new Date(user.planExpiresAt).toISOString()
+          : null;
+        token.isAnonymous = user.isAnonymous ?? user.type === "guest";
       }
-      return true;
+
+      if (account?.provider === "google") {
+        token.type = "regular";
+        token.isAnonymous = false;
+      }
+
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.type = token.type;
+        session.user.plan = token.plan ?? "free";
+        session.user.planExpiresAt = token.planExpiresAt ?? null;
+        session.user.isAnonymous =
+          token.isAnonymous ?? token.type === "guest";
+      }
+
+      return session;
     },
   },
 } satisfies NextAuthConfig;

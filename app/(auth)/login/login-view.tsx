@@ -42,6 +42,17 @@ export default function LoginView() {
   useEffect(() => {
     if (state.status === "failed") {
       toast({ type: "error", description: "Invalid credentials!" });
+    } else if (state.status === "oauth_only") {
+      toast({
+        type: "error",
+        description: "This account uses Google sign-in. Use the Google button below.",
+      });
+    } else if (state.status === "database_error") {
+      toast({
+        type: "error",
+        description:
+          "Sign-in is temporarily unavailable. Check that the production database is configured.",
+      });
     } else if (state.status === "invalid_data") {
       toast({
         type: "error",

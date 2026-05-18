@@ -12,7 +12,14 @@ const authFormSchema = z.object({
 });
 
 export type LoginActionState = {
-  status: "idle" | "in_progress" | "success" | "failed" | "invalid_data";
+  status:
+    | "idle"
+    | "in_progress"
+    | "success"
+    | "failed"
+    | "invalid_data"
+    | "oauth_only"
+    | "database_error";
 };
 
 export const login = async (
@@ -25,6 +32,11 @@ export const login = async (
       password: formData.get("password"),
     });
 
+    const [existing] = await getUser(validatedData.email);
+    if (existing && !existing.password) {
+      return { status: "oauth_only" };
+    }
+
     await signIn("credentials", {
       email: validatedData.email,
       password: validatedData.password,
@@ -35,6 +47,15 @@ export const login = async (
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { status: "invalid_data" };
+    }
+
+    const message =
+      error instanceof Error ? error.message : "Sign-in failed";
+    if (
+      message.includes("database") ||
+      message.includes("Failed to get user")
+    ) {
+      return { status: "database_error" };
     }
 
     return { status: "failed" };

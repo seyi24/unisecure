@@ -26,9 +26,24 @@ export async function GET(request: Request) {
     return signIn("guest", { redirect: true, redirectTo: redirectUrl });
   } catch (error) {
     console.error(
-      "=== ROUTE ERROR ===",
-      JSON.stringify(error, Object.getOwnPropertyNames(error))
+      "[auth] guest sign-in failed:",
+      error instanceof Error ? error.message : error
     );
-    throw error;
+
+    const message =
+      error instanceof Error ? error.message : "Guest sign-in failed";
+    const isDatabase =
+      message.includes("database") ||
+      message.includes("POSTGRES") ||
+      message.includes("connect");
+
+    return NextResponse.json(
+      {
+        error: isDatabase
+          ? "Database is unavailable. Check POSTGRES_URL on Vercel and that migrations ran during build."
+          : "Could not start a guest session. Try again or sign in.",
+      },
+      { status: isDatabase ? 503 : 500 }
+    );
   }
 }

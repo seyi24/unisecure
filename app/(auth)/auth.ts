@@ -2,6 +2,7 @@ import { compare } from "bcrypt-ts";
 import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import {
   createGuestUser,
@@ -53,7 +54,11 @@ export const {
 } = NextAuth({
   ...authConfig,
   providers: [
-    ...(authConfig.providers || []),
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      allowDangerousEmailAccountLinking: true,
+    }),
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
@@ -62,33 +67,42 @@ export const {
       async authorize(credentials) {
         const email = String(credentials.email ?? "");
         const password = String(credentials.password ?? "");
-        const users = await getUser(email);
 
-        if (users.length === 0) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
+        try {
+          const users = await getUser(email);
+
+          if (users.length === 0) {
+            await compare(password, DUMMY_PASSWORD);
+            return null;
+          }
+
+          const [user] = users;
+
+          if (!user.password) {
+            await compare(password, DUMMY_PASSWORD);
+            return null;
+          }
+
+          const passwordsMatch = await compare(password, user.password);
+
+          if (!passwordsMatch) {
+            return null;
+          }
+
+          return {
+            ...user,
+            type: "regular",
+            plan: user.plan,
+            planExpiresAt: user.planExpiresAt,
+            isAnonymous: user.isAnonymous,
+          };
+        } catch (error) {
+          console.error(
+            "[auth] credentials authorize failed:",
+            error instanceof Error ? error.message : error
+          );
+          throw error;
         }
-
-        const [user] = users;
-
-        if (!user.password) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
-        const passwordsMatch = await compare(password, user.password);
-
-        if (!passwordsMatch) {
-          return null;
-        }
-
-        return {
-          ...user,
-          type: "regular",
-          plan: user.plan,
-          planExpiresAt: user.planExpiresAt,
-          isAnonymous: user.isAnonymous,
-        };
       },
     }),
     Credentials({
@@ -106,15 +120,16 @@ export const {
           };
         } catch (error) {
           console.error(
-            "=== GUEST ERROR ===",
-            JSON.stringify(error, Object.getOwnPropertyNames(error))
+            "[auth] guest authorize failed:",
+            error instanceof Error ? error.message : error
           );
-          return null;
+          throw error;
         }
       },
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user, account, trigger }) {
       if (user) {
         token.id = user.id as string;
@@ -126,7 +141,7 @@ export const {
         token.isAnonymous = user.isAnonymous ?? user.type === "guest";
       }
 
-      if (account && account.provider === "google") {
+      if (account?.provider === "google") {
         token.type = "regular";
         token.isAnonymous = false;
         if (token.email) {
@@ -154,34 +169,18 @@ export const {
 
       return token;
     },
-    session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.type = token.type;
-        session.user.plan = token.plan ?? "free";
-        session.user.planExpiresAt = token.planExpiresAt ?? null;
-        session.user.isAnonymous =
-          token.isAnonymous ?? token.type === "guest";
-      }
-
-      return session;
-    },
-    async signIn({ user, account, profile }) {
-      if (!account) {
-        return true;
-      }
-
-      if (account.provider === "google" && profile?.email) {
+    async signIn({ account, profile }) {
+      if (account?.provider === "google" && profile?.email) {
         try {
           const existingUsers = await getUser(profile.email);
 
           if (existingUsers.length === 0) {
-            await createUser(profile.email, "");
+            await createUser(profile.email);
           }
 
           return true;
         } catch (error) {
-          console.error("Error in signIn callback:", error);
+          console.error("[auth] google signIn failed:", error);
           return false;
         }
       }

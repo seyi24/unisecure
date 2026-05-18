@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/app/(auth)/auth";
+import { auth } from "@/app/(auth)/auth.middleware";
 
 const PUBLIC_PATHS = ["/login", "/register", "/pricing", "/payment"];
 
