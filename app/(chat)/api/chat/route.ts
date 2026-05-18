@@ -36,6 +36,7 @@ import {
   getLifetimeMessageCountByUserId,
   getMessageCountByUserIdSince,
   getMessagesByChatId,
+  getUserById,
   saveChat,
   saveMessages,
   updateChatTitleById,
@@ -100,6 +101,14 @@ export async function POST(request: Request) {
 
     if (!session?.user) {
       return new ChatbotError("unauthorized:chat").toResponse();
+    }
+
+    const dbUser = await getUserById(session.user.id);
+    if (!dbUser) {
+      return new ChatbotError(
+        "unauthorized:auth",
+        "Your session is no longer valid. Refresh the page to continue."
+      ).toResponse();
     }
 
     const chatModel = allowedModelIds.has(selectedChatModel)

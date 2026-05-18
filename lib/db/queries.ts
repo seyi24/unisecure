@@ -112,8 +112,11 @@ export async function saveChat({
       title,
       visibility,
     });
-  } catch (_error) {
-    throw new ChatbotError("bad_request:database", "Failed to save chat");
+  } catch (error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      `Failed to save chat: ${formatDbQueryError(error)}`
+    );
   }
 }
 

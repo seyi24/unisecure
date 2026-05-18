@@ -43,8 +43,12 @@ declare module "next-auth/jwt" {
     plan: UserPlan;
     planExpiresAt: string | null;
     isAnonymous: boolean;
+    invalidUser?: boolean;
+    userValidatedAt?: number;
   }
 }
+
+const USER_VALIDATION_INTERVAL_MS = 5 * 60 * 1000;
 
 export const {
   handlers: { GET, POST },
@@ -156,18 +160,47 @@ export const {
         }
       }
 
-      if (trigger === "update" && token.id) {
-        const refreshed = await getUserById(token.id);
-        if (refreshed) {
-          token.plan = refreshed.plan ?? "free";
-          token.planExpiresAt = refreshed.planExpiresAt
-            ? refreshed.planExpiresAt.toISOString()
-            : null;
-          token.isAnonymous = refreshed.isAnonymous;
+      const shouldValidateUser =
+        token.id &&
+        (Boolean(user) ||
+          trigger === "update" ||
+          typeof token.userValidatedAt !== "number" ||
+          Date.now() - token.userValidatedAt > USER_VALIDATION_INTERVAL_MS);
+
+      if (shouldValidateUser && token.id) {
+        const dbUser = await getUserById(token.id);
+        token.userValidatedAt = Date.now();
+
+        if (!dbUser) {
+          token.invalidUser = true;
+          return token;
         }
+
+        token.invalidUser = false;
+        token.plan = dbUser.plan ?? "free";
+        token.planExpiresAt = dbUser.planExpiresAt
+          ? dbUser.planExpiresAt.toISOString()
+          : null;
+        token.isAnonymous = dbUser.isAnonymous;
       }
 
       return token;
+    },
+    session({ session, token }) {
+      if (token.invalidUser) {
+        return null as never;
+      }
+
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.type = token.type;
+        session.user.plan = token.plan ?? "free";
+        session.user.planExpiresAt = token.planExpiresAt ?? null;
+        session.user.isAnonymous =
+          token.isAnonymous ?? token.type === "guest";
+      }
+
+      return session;
     },
     async signIn({ account, profile }) {
       if (account?.provider === "google" && profile?.email) {
