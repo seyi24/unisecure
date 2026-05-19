@@ -1,6 +1,7 @@
 import {
   getPaymentByReference,
   grantUserPlan,
+  syncUserNameFromPayment,
   updatePaymentStatus,
 } from "@/lib/db/queries";
 import type { PaymentStatus } from "@/lib/db/schema";
@@ -179,6 +180,11 @@ async function handle(request: Request): Promise<Response> {
       plan: payment.plan,
       planExpiresAt: computePlanExpiry(),
     });
+    await syncUserNameFromPayment(
+      payment.userId,
+      payment.customerFirstName,
+      payment.customerLastName
+    );
   }
 
   return Response.json({ ok: true, status });

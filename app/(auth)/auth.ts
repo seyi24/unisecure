@@ -3,12 +3,14 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { getGoogleProfileFields } from "@/lib/auth/google-profile";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import {
   createGuestUser,
   createUser,
   getUser,
   getUserById,
+  updateUserProfileFromOAuth,
 } from "@/lib/db/queries";
 import type { UserPlan } from "@/lib/db/schema";
 import { authConfig } from "./auth.config";
@@ -205,10 +207,14 @@ export const {
     async signIn({ account, profile }) {
       if (account?.provider === "google" && profile?.email) {
         try {
-          const existingUsers = await getUser(profile.email);
+          const email = profile.email;
+          const oauthProfile = getGoogleProfileFields(profile);
+          const existingUsers = await getUser(email);
 
           if (existingUsers.length === 0) {
-            await createUser(profile.email);
+            await createUser(email, undefined, oauthProfile);
+          } else {
+            await updateUserProfileFromOAuth(existingUsers[0].id, oauthProfile);
           }
 
           return true;

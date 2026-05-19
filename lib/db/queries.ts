@@ -63,13 +63,116 @@ export async function getUser(email: string): Promise<User[]> {
   }
 }
 
-export async function createUser(email: string, password?: string) {
+export async function createUser(
+  email: string,
+  password?: string,
+  profile?: {
+    name?: string | null;
+    image?: string | null;
+    emailVerified?: boolean;
+  }
+) {
   const hashedPassword = password ? generateHashedPassword(password) : null;
+  const name = profile?.name?.trim();
+  const image = profile?.image?.trim();
 
   try {
-    return await db.insert(user).values({ email, password: hashedPassword });
+    return await db.insert(user).values({
+      email,
+      password: hashedPassword,
+      ...(name ? { name } : {}),
+      ...(image ? { image } : {}),
+      ...(profile?.emailVerified ? { emailVerified: true } : {}),
+    });
   } catch (_error) {
     throw new ChatbotError("bad_request:database", "Failed to create user");
+  }
+}
+
+export async function updateUserProfileFromOAuth(
+  userId: string,
+  values: {
+    name?: string | null;
+    image?: string | null;
+    emailVerified?: boolean;
+  }
+) {
+  const existing = await getUserById(userId);
+  if (!existing) {
+    return;
+  }
+
+  const name = values.name?.trim();
+  const image = values.image?.trim();
+  const hasExistingName = Boolean(existing.name?.trim());
+  const hasExistingImage = Boolean(existing.image?.trim());
+
+  const updates: {
+    name?: string;
+    image?: string;
+    emailVerified?: boolean;
+    updatedAt: Date;
+  } = { updatedAt: new Date() };
+
+  if (name && !hasExistingName) {
+    updates.name = name;
+  }
+  if (image && !hasExistingImage) {
+    updates.image = image;
+  }
+  if (values.emailVerified && !existing.emailVerified) {
+    updates.emailVerified = true;
+  }
+
+  if (
+    updates.name === undefined &&
+    updates.image === undefined &&
+    updates.emailVerified === undefined
+  ) {
+    return;
+  }
+
+  try {
+    return await db
+      .update(user)
+      .set(updates)
+      .where(eq(user.id, userId));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to update user profile"
+    );
+  }
+}
+
+export async function syncUserNameFromPayment(
+  userId: string,
+  firstName: string | null,
+  lastName: string | null
+) {
+  const fullName = [firstName?.trim(), lastName?.trim()]
+    .filter((part): part is string => Boolean(part))
+    .join(" ");
+
+  if (!fullName) {
+    return;
+  }
+
+  const existing = await getUserById(userId);
+  if (!existing || existing.name?.trim()) {
+    return;
+  }
+
+  try {
+    return await db
+      .update(user)
+      .set({ name: fullName, updatedAt: new Date() })
+      .where(eq(user.id, userId));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to sync user name from payment"
+    );
   }
 }
 
