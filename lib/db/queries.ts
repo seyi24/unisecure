@@ -26,6 +26,8 @@ import {
   type DBMessage,
   document,
   message,
+  type PasswordResetToken,
+  passwordResetToken,
   type Payment,
   payment,
   type PaymentStatus,
@@ -68,6 +70,97 @@ export async function createUser(email: string, password?: string) {
     return await db.insert(user).values({ email, password: hashedPassword });
   } catch (_error) {
     throw new ChatbotError("bad_request:database", "Failed to create user");
+  }
+}
+
+export async function updateUserPassword(userId: string, password: string) {
+  const hashedPassword = generateHashedPassword(password);
+
+  try {
+    return await db
+      .update(user)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(user.id, userId));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to update user password"
+    );
+  }
+}
+
+export async function deletePasswordResetTokensForUser(userId: string) {
+  try {
+    return await db
+      .delete(passwordResetToken)
+      .where(eq(passwordResetToken.userId, userId));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to delete password reset tokens"
+    );
+  }
+}
+
+export async function createPasswordResetToken(values: {
+  userId: string;
+  tokenHash: string;
+  expiresAt: Date;
+}) {
+  try {
+    await deletePasswordResetTokensForUser(values.userId);
+
+    const [row] = await db
+      .insert(passwordResetToken)
+      .values({
+        userId: values.userId,
+        tokenHash: values.tokenHash,
+        expiresAt: values.expiresAt,
+      })
+      .returning();
+
+    return row;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to create password reset token"
+    );
+  }
+}
+
+export async function getValidPasswordResetToken(
+  tokenHash: string
+): Promise<PasswordResetToken | null> {
+  try {
+    const [row] = await db
+      .select()
+      .from(passwordResetToken)
+      .where(eq(passwordResetToken.tokenHash, tokenHash))
+      .limit(1);
+
+    if (!row || row.expiresAt.getTime() <= Date.now()) {
+      return null;
+    }
+
+    return row;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to get password reset token"
+    );
+  }
+}
+
+export async function deletePasswordResetTokenById(id: string) {
+  try {
+    return await db
+      .delete(passwordResetToken)
+      .where(eq(passwordResetToken.id, id));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to delete password reset token"
+    );
   }
 }
 

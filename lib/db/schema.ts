@@ -31,6 +31,18 @@ export const user = pgTable("User", {
 
 export type User = InferSelectModel<typeof user>;
 
+export const passwordResetToken = pgTable("PasswordResetToken", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  tokenHash: varchar("tokenHash", { length: 64 }).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type PasswordResetToken = InferSelectModel<typeof passwordResetToken>;
+
 export const paymentStatuses = [
   "pending",
   "success",

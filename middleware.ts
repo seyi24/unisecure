@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth.middleware";
 
-const PUBLIC_PATHS = ["/login", "/register", "/pricing", "/payment"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/pricing",
+  "/payment",
+];
 
 export default auth((req) => {
   const isAuth = !!req.auth;
   const isAnonymous = req.auth?.user?.isAnonymous === true;
   const pathname = req.nextUrl.pathname;
   const isAuthPage =
-    pathname.startsWith("/login") || pathname.startsWith("/register");
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password");
   const isApiAuth = pathname.startsWith("/api/auth");
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 

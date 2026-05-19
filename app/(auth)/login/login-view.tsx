@@ -70,26 +70,9 @@ export default function LoginView() {
     formAction(formData);
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsGoogleLoading(true);
-      const result = await signIn("google", {
-        redirect: false,
-        callbackUrl: postAuthRedirect,
-      });
-
-      if (result?.error) {
-        toast({ type: "error", description: "Failed to sign in with Google" });
-      } else if (result?.ok) {
-        updateSession();
-        router.replace(postAuthRedirect);
-      }
-    } catch (error) {
-      toast({ type: "error", description: "An error occurred during sign in" });
-      console.error("Google sign-in error:", error);
-    } finally {
-      setIsGoogleLoading(false);
-    }
+  const handleGoogleSignIn = () => {
+    setIsGoogleLoading(true);
+    void signIn("google", { callbackUrl: postAuthRedirect });
   };
 
   return (
@@ -99,7 +82,7 @@ export default function LoginView() {
         Sign in to your account to continue
       </p>
 
-      <AuthForm action={handleSubmit} defaultEmail={email}>
+      <AuthForm action={handleSubmit} defaultEmail={email} showForgotPassword>
         <SubmitButton isSuccessful={isSuccessful}>Sign in</SubmitButton>
       </AuthForm>
 

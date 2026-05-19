@@ -62,26 +62,9 @@ export default function RegisterView() {
     formAction(formData);
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsGoogleLoading(true);
-      const result = await signIn("google", {
-        redirect: false,
-        callbackUrl: postAuthRedirect,
-      });
-
-      if (result?.error) {
-        toast({ type: "error", description: "Failed to sign up with Google" });
-      } else if (result?.ok) {
-        updateSession();
-        router.replace(postAuthRedirect);
-      }
-    } catch (error) {
-      toast({ type: "error", description: "An error occurred during sign up" });
-      console.error("Google sign-up error:", error);
-    } finally {
-      setIsGoogleLoading(false);
-    }
+  const handleGoogleSignIn = () => {
+    setIsGoogleLoading(true);
+    void signIn("google", { callbackUrl: postAuthRedirect });
   };
 
   return (
