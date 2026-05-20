@@ -17,7 +17,7 @@ export type UserPlan = (typeof userPlans)[number];
 
 export const user = pgTable("User", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
-  email: varchar("email", { length: 64 }).notNull(),
+  email: varchar("email", { length: 64 }).notNull().unique(),
   password: varchar("password", { length: 64 }),
   name: text("name"),
   emailVerified: boolean("emailVerified").notNull().default(false),

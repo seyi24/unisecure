@@ -10,6 +10,7 @@ import {
   gte,
   inArray,
   lt,
+  sql,
   type SQL,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
@@ -54,7 +55,23 @@ const db = drizzle(client);
 
 export async function getUser(email: string): Promise<User[]> {
   try {
-    return await db.select().from(user).where(eq(user.email, email));
+    return await db
+      .select()
+      .from(user)
+      .where(eq(user.email, email))
+      .orderBy(
+        desc(sql`CASE WHEN ${user.password} IS NOT NULL THEN 1 ELSE 0 END`),
+        desc(
+          sql`CASE ${user.plan}
+            WHEN 'elite' THEN 4
+            WHEN 'pro' THEN 3
+            WHEN 'starter' THEN 2
+            ELSE 1
+          END`
+        ),
+        desc(user.planExpiresAt),
+        asc(user.createdAt)
+      );
   } catch (_error) {
     throw new ChatbotError(
       "bad_request:database",
@@ -922,6 +939,32 @@ export async function createPendingPayment(values: {
     throw new ChatbotError(
       "bad_request:database",
       "Failed to create payment record"
+    );
+  }
+}
+
+export async function getLatestPendingPaymentForPlan(values: {
+  userId: string;
+  plan: UserPlan;
+}): Promise<Payment | null> {
+  try {
+    const [row] = await db
+      .select()
+      .from(payment)
+      .where(
+        and(
+          eq(payment.userId, values.userId),
+          eq(payment.plan, values.plan),
+          eq(payment.status, "pending")
+        )
+      )
+      .orderBy(desc(payment.createdAt))
+      .limit(1);
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to get latest pending payment for plan"
     );
   }
 }

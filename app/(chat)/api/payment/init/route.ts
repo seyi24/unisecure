@@ -1,7 +1,11 @@
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { auth } from "@/app/(auth)/auth";
-import { createPendingPayment } from "@/lib/db/queries";
+import {
+  createPendingPayment,
+  getLatestPendingPaymentForPlan,
+  getUserById,
+} from "@/lib/db/queries";
 import { userPlans } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
 import {
@@ -87,6 +91,41 @@ export async function POST(request: Request) {
       "bad_request:api",
       "Selected plan is not purchasable."
     ).toResponse();
+  }
+
+  const currentUser = await getUserById(session.user.id);
+  if (
+    currentUser &&
+    currentUser.plan === payload.plan &&
+    currentUser.planExpiresAt &&
+    currentUser.planExpiresAt.getTime() > Date.now()
+  ) {
+    return Response.json(
+      {
+        code: "conflict:payment",
+        message: `You already have an active ${payload.plan} plan.`,
+      },
+      { status: 409 }
+    );
+  }
+
+  const latestPending = await getLatestPendingPaymentForPlan({
+    userId: session.user.id,
+    plan: payload.plan,
+  });
+  if (
+    latestPending &&
+    Date.now() - latestPending.createdAt.getTime() < 10 * 60 * 1000
+  ) {
+    return Response.json(
+      {
+        code: "conflict:payment",
+        message:
+          "A payment is already pending for this plan. Complete it or wait 10 minutes before retrying.",
+        referenceNumber: latestPending.referenceNumber,
+      },
+      { status: 409 }
+    );
   }
 
   const referenceNumber = `UNS-${Date.now().toString(36)}-${nanoid(10)}`;
