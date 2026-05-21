@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { auth, signOut } from "@/app/(auth)/auth";
-import { isAdminEmail } from "@/lib/admin/auth";
+import { hasAdminAccess } from "@/lib/admin/auth";
 
 type SearchParams = Promise<{
   redirectUrl?: string;
@@ -23,7 +23,7 @@ export default async function AdminAuthCompletePage({
     redirect(`/admin/login?redirectUrl=${encodeURIComponent(redirectUrl)}`);
   }
 
-  if (!isAdminEmail(session.user.email)) {
+  if (!(await hasAdminAccess(session))) {
     await signOut({ redirectTo: "/admin/login?error=not_authorized" });
     return;
   }

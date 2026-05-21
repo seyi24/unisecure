@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 
 import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { auth } from "@/app/(auth)/auth";
+import { hasAdminAccess } from "@/lib/admin/auth";
 import { AppSidebar } from "@/app/(admin)/admin/(panel)/dashboard/_components/sidebar/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -24,7 +27,16 @@ import { ThemeSwitcher } from "./dashboard/_components/sidebar/theme-switcher";
 export default async function AdminLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  const cookieStore = await cookies();
+  const [session, cookieStore] = await Promise.all([auth(), cookies()]);
+
+  if (!session?.user || session.user.isAnonymous) {
+    redirect("/admin/login");
+  }
+
+  if (!(await hasAdminAccess(session))) {
+    redirect("/admin/login?error=not_authorized");
+  }
+
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
   const [variant, collapsible] = await Promise.all([
     getPreference("sidebar_variant", SIDEBAR_VARIANT_VALUES, "inset"),
@@ -40,7 +52,11 @@ export default async function AdminLayout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar collapsible={collapsible} variant={variant} />
+      <AppSidebar
+        collapsible={collapsible}
+        user={session?.user}
+        variant={variant}
+      />
       <SidebarInset
         className={cn(
           "[html[data-content-layout=centered]_&>*]:mx-auto",

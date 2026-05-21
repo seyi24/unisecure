@@ -1013,6 +1013,26 @@ export async function updatePaymentStatus(values: {
   }
 }
 
+export async function setUserAdminRole(values: {
+  userId: string;
+  isAdmin: boolean;
+}) {
+  try {
+    return await db
+      .update(user)
+      .set({
+        isAdmin: values.isAdmin,
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, values.userId));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to update admin role"
+    );
+  }
+}
+
 export async function grantUserPlan(values: {
   userId: string;
   plan: UserPlan;

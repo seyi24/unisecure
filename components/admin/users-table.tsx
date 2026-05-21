@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { isAdminEmail, isSuperAdminEmail } from "@/lib/admin/auth";
 import type { AdminUserListItem } from "@/lib/db/admin-queries";
 
 export function UsersTable({
@@ -43,6 +44,7 @@ export function UsersTable({
             <TableHead>Email</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Type</TableHead>
+            <TableHead>Admin</TableHead>
             <TableHead>Active plan</TableHead>
             <TableHead>Verified</TableHead>
             <TableHead>Joined</TableHead>
@@ -52,7 +54,7 @@ export function UsersTable({
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell className="text-muted-foreground" colSpan={7}>
+              <TableCell className="text-muted-foreground" colSpan={8}>
                 No users match your filters.
               </TableCell>
             </TableRow>
@@ -73,6 +75,19 @@ export function UsersTable({
                     <Badge variant="outline">Guest</Badge>
                   ) : (
                     <Badge variant="secondary">Registered</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {row.isAnonymous ? (
+                    "—"
+                  ) : isSuperAdminEmail(row.email) ? (
+                    <Badge>Superadmin</Badge>
+                  ) : isAdminEmail(row.email) ? (
+                    <Badge variant="default">Admin</Badge>
+                  ) : row.isAdmin ? (
+                    <Badge variant="default">Admin</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell>

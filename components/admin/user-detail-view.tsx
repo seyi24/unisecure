@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 
+import { AdminRoleForm } from "@/components/admin/admin-role-form";
 import { GrantPlanForm } from "@/components/admin/grant-plan-form";
 import { PaymentStatusBadge } from "@/components/admin/payment-status-badge";
 import { PlanBadge } from "@/components/admin/plan-badge";
@@ -29,9 +30,17 @@ type UserChat = {
 export function UserDetailView({
   detail,
   chats,
+  isViewerSuperAdmin,
+  isDbAdmin,
+  isEnvAdmin,
+  isSuperAdmin,
 }: {
   detail: AdminUserDetail;
   chats: UserChat[];
+  isViewerSuperAdmin: boolean;
+  isDbAdmin: boolean;
+  isEnvAdmin: boolean;
+  isSuperAdmin: boolean;
 }) {
   const { user, activePlan, messagesToday, lifetimeMessages, chatCount, payments } =
     detail;
@@ -61,6 +70,17 @@ export function UserDetailView({
         userId={user.id}
       />
 
+      {isViewerSuperAdmin ? (
+        <AdminRoleForm
+          isAnonymous={user.isAnonymous}
+          isDbAdmin={isDbAdmin}
+          isEnvAdmin={isEnvAdmin}
+          isSuperAdmin={isSuperAdmin}
+          userEmail={user.email}
+          userId={user.id}
+        />
+      ) : null}
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -72,6 +92,18 @@ export function UserDetailView({
             <DetailItem
               label="Account type"
               value={user.isAnonymous ? "Guest" : "Registered"}
+            />
+            <DetailItem
+              label="Admin access"
+              value={
+                isSuperAdmin
+                  ? "Superadmin"
+                  : isEnvAdmin
+                    ? "Admin (environment)"
+                    : isDbAdmin
+                      ? "Admin (granted)"
+                      : "No"
+              }
             />
             <DetailItem
               label="Email verified"

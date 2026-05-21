@@ -337,6 +337,7 @@ export type AdminUserListItem = Pick<
   | "name"
   | "plan"
   | "isAnonymous"
+  | "isAdmin"
   | "emailVerified"
   | "createdAt"
   | "planExpiresAt"
@@ -394,6 +395,7 @@ export async function listAdminUsers({
         name: user.name,
         plan: user.plan,
         isAnonymous: user.isAnonymous,
+        isAdmin: user.isAdmin,
         emailVerified: user.emailVerified,
         createdAt: user.createdAt,
         planExpiresAt: user.planExpiresAt,

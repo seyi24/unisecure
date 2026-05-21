@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth.middleware";
-import { isAdminEmail } from "@/lib/admin/allowed-emails";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -43,12 +42,6 @@ export default auth((req) => {
       "redirectUrl",
       `${pathname}${req.nextUrl.search}`
     );
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (isAdminPath && isAuth && !isAnonymous && !isAdminEmail(req.auth?.user?.email)) {
-    const loginUrl = new URL("/admin/login", req.url);
-    loginUrl.searchParams.set("error", "not_authorized");
     return NextResponse.redirect(loginUrl);
   }
 

@@ -18,6 +18,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { guestRegex } from "@/lib/constants";
+import { UserPlanBadge } from "@/components/chat/user-plan-badge";
 import { LoaderIcon } from "./icons";
 import { toast } from "./toast";
 
@@ -64,10 +65,14 @@ export function SidebarUserNav({ user }: { user: User }) {
                     background: `linear-gradient(135deg, oklch(0.35 0.08 ${emailToHue(user.email ?? "")}), oklch(0.25 0.05 ${emailToHue(user.email ?? "") + 40}))`,
                   }}
                 />
-                <span className="truncate text-[13px]" data-testid="user-email">
+                <span
+                  className="min-w-0 flex-1 truncate text-[13px]"
+                  data-testid="user-email"
+                >
                   {isGuest ? "Guest" : user?.email}
                 </span>
-                <ChevronUp className="ml-auto size-3.5 text-sidebar-foreground/50" />
+                <UserPlanBadge className="shrink-0" />
+                <ChevronUp className="size-3.5 shrink-0 text-sidebar-foreground/50" />
               </SidebarMenuButton>
             )}
           </DropdownMenuTrigger>

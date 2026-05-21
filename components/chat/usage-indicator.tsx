@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import useSWR from "swr";
 import type { UsageResponse } from "@/app/(chat)/api/usage/route";
+import { PlanBadge } from "@/components/admin/plan-badge";
 import { cn } from "@/lib/utils";
 
 const fetcher = (url: string) =>
@@ -59,32 +60,31 @@ export function UsageIndicator({ refreshKey }: UsageIndicatorProps) {
     );
   }
 
-  if (data.plan === "elite") {
-    return null;
-  }
+  const showUpgrade =
+    data.plan === "free" || data.plan === "starter" || isLow;
 
   return (
     <div
       className={cn(
         "flex w-full items-center justify-between gap-2 rounded-xl border border-border/40 bg-muted/30 px-3 py-2 text-[12px] text-muted-foreground",
-        isLow && "border-amber-400/30 bg-amber-500/5 text-foreground/85"
+        isLow && "border-amber-400/30 bg-amber-500/5 text-foreground/85",
+        data.plan === "elite" && "border-amber-400/20 bg-amber-500/5"
       )}
     >
-      <span>
-        <span className="font-medium capitalize text-foreground">
-          {data.plan} plan
-        </span>
-        <span className="mx-1.5 text-muted-foreground/60">·</span>
-        <span>
+      <span className="flex min-w-0 items-center gap-2">
+        <PlanBadge className="shrink-0" plan={data.plan} />
+        <span className="truncate">
           {data.remaining} of {data.limit} questions left today
         </span>
       </span>
-      <Link
-        className="rounded-md border border-border/60 px-2.5 py-1 text-foreground transition-colors hover:bg-muted"
-        href="/pricing"
-      >
-        Upgrade
-      </Link>
+      {showUpgrade ? (
+        <Link
+          className="shrink-0 rounded-md border border-border/60 px-2.5 py-1 text-foreground transition-colors hover:bg-muted"
+          href="/pricing"
+        >
+          Upgrade
+        </Link>
+      ) : null}
     </div>
   );
 }

@@ -23,6 +23,7 @@ export const user = pgTable("User", {
   emailVerified: boolean("emailVerified").notNull().default(false),
   image: text("image"),
   isAnonymous: boolean("isAnonymous").notNull().default(false),
+  isAdmin: boolean("isAdmin").notNull().default(false),
   plan: varchar("plan", { enum: userPlans }).notNull().default("free"),
   planExpiresAt: timestamp("planExpiresAt"),
   createdAt: timestamp("createdAt").notNull().defaultNow(),

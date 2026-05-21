@@ -2,6 +2,7 @@ import { auth } from "@/app/(auth)/auth";
 import {
   getEntitlements,
   GUEST_LIFETIME_MESSAGE_LIMIT,
+  resolveActivePlan,
 } from "@/lib/ai/entitlements";
 import {
   getLifetimeMessageCountByUserId,
@@ -25,9 +26,14 @@ export async function GET() {
     return new ChatbotError("unauthorized:chat").toResponse();
   }
 
+  const activePlan = resolveActivePlan({
+    plan: session.user.plan,
+    planExpiresAt: session.user.planExpiresAt,
+  });
+
   const entitlements = getEntitlements({
     isAnonymous: session.user.isAnonymous,
-    plan: session.user.plan,
+    plan: activePlan,
     planExpiresAt: session.user.planExpiresAt,
   });
 
@@ -54,7 +60,7 @@ export async function GET() {
 
   const body: UsageResponse = {
     isAnonymous: session.user.isAnonymous,
-    plan: session.user.plan,
+    plan: activePlan,
     used,
     limit,
     remaining,

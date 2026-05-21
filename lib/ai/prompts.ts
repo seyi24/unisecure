@@ -139,3 +139,16 @@ Examples:
 - "debug my python code" → Python Debugging
 
 Never output hashtags, prefixes like "Title:", or quotes.`;
+
+export const chatSuggestionsPrompt = `You generate starter questions for Unisecure, a cybersecurity assistant.
+
+Return exactly 4 short questions a real user might tap to begin a chat.
+
+Rules:
+- One sentence each, max 90 characters
+- Focus on cybersecurity: threats, protection, privacy, accounts, devices, networks, scams, compliance basics
+- All 4 must be clearly different topics (no near-duplicates)
+- Mix beginner-friendly and practical angles
+- Avoid generic filler like "Tell me about cybersecurity"
+- Never repeat the same question wording across generations
+- Write in English`;

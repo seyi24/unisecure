@@ -6,6 +6,8 @@ import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Logo } from "@/components/logo";
+import { UserPlanBadge } from "@/components/chat/user-plan-badge";
+
 function PureChatHeader() {
   const { state, toggleSidebar, isMobile } = useSidebar();
 
@@ -31,10 +33,12 @@ function PureChatHeader() {
         <Logo size={50} />
       </Link>
 
-      <Button
-        asChild
-        className="hidden rounded-lg bg-foreground px-4 text-background hover:bg-foreground/90 md:ml-auto md:flex"
-      >
+      <div className="ml-auto flex items-center gap-2">
+        <UserPlanBadge />
+        <Button
+          asChild
+          className="hidden rounded-lg bg-foreground px-4 text-background hover:bg-foreground/90 md:flex"
+        >
         <Link
           href="mailto:unisecure7@gmail.com"
           rel="noopener noreferrer"
@@ -42,9 +46,8 @@ function PureChatHeader() {
          
           Contact Support
         </Link>
-      </Button>
-
-      
+        </Button>
+      </div>
     </header>
   );
 }

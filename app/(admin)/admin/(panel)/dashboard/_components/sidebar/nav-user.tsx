@@ -1,6 +1,8 @@
 "use client";
 
 import { CircleUser, CreditCard, EllipsisVertical, LogOut, MessageSquareDot } from "lucide-react";
+import type { User } from "next-auth";
+import { signOut, useSession } from "next-auth/react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -15,16 +17,48 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { getInitials } from "@/lib/utils";
 
-export function NavUser({
-  user,
-}: {
-  readonly user: {
-    readonly name: string;
-    readonly email: string;
-    readonly avatar: string;
+type NavUserProfile = {
+  name: string;
+  email: string;
+  avatar: string;
+};
+
+function toNavUserProfile(user: User | undefined | null): NavUserProfile | null {
+  if (!user?.email) {
+    return null;
+  }
+
+  return {
+    name: user.name?.trim() || user.email,
+    email: user.email,
+    avatar: user.image?.trim() ?? "",
   };
-}) {
+};
+
+export function NavUser({ user: initialUser }: { readonly user?: User }) {
   const { isMobile } = useSidebar();
+  const { data: session, status } = useSession();
+  const user = toNavUserProfile(session?.user ?? initialUser);
+
+  if (status === "loading" && !user) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton className="h-12" size="lg">
+            <div className="size-8 animate-pulse rounded-lg bg-muted" />
+            <div className="grid flex-1 gap-1">
+              <div className="h-3.5 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <SidebarMenu>
@@ -35,7 +69,7 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
+              <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar || undefined} alt={user.name} />
                 <AvatarFallback className="rounded-lg">{getInitials(user.name)}</AvatarFallback>
               </Avatar>
@@ -80,7 +114,11 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                void signOut({ redirectTo: "/admin/login" });
+              }}
+            >
               <LogOut />
               Log out
             </DropdownMenuItem>

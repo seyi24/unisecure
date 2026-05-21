@@ -26,6 +26,7 @@ declare module "next-auth" {
       plan: UserPlan;
       planExpiresAt: string | null;
       isAnonymous: boolean;
+      isAdmin?: boolean;
     } & DefaultSession["user"];
   }
 
@@ -46,6 +47,7 @@ declare module "next-auth/jwt" {
     plan: UserPlan;
     planExpiresAt: string | null;
     isAnonymous: boolean;
+    isAdmin?: boolean;
     invalidUser?: boolean;
     userValidatedAt?: number;
   }
@@ -122,11 +124,6 @@ export const {
         const email = String(credentials.email ?? "").trim().toLowerCase();
         const password = String(credentials.password ?? "");
 
-        if (!isAdminEmail(email)) {
-          await compare(password, DUMMY_PASSWORD);
-          return null;
-        }
-
         try {
           const users = await getUser(email);
 
@@ -136,6 +133,11 @@ export const {
           }
 
           const [dbUser] = users;
+
+          if (!isAdminEmail(email) && !dbUser.isAdmin) {
+            await compare(password, DUMMY_PASSWORD);
+            return null;
+          }
 
           if (!dbUser.password) {
             await compare(password, DUMMY_PASSWORD);
@@ -237,6 +239,9 @@ export const {
           ? dbUser.planExpiresAt.toISOString()
           : null;
         token.isAnonymous = dbUser.isAnonymous;
+        token.isAdmin =
+          Boolean(dbUser.isAdmin) ||
+          isAdminEmail(dbUser.email);
       }
 
       return token;
@@ -253,6 +258,7 @@ export const {
         session.user.planExpiresAt = token.planExpiresAt ?? null;
         session.user.isAnonymous =
           token.isAnonymous ?? token.type === "guest";
+        session.user.isAdmin = token.isAdmin === true;
       }
 
       return session;
