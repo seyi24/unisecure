@@ -3,6 +3,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { isAdminEmail } from "@/lib/admin/allowed-emails";
 import { getGoogleProfileFields } from "@/lib/auth/google-profile";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import {
@@ -105,6 +106,58 @@ export const {
         } catch (error) {
           console.error(
             "[auth] credentials authorize failed:",
+            error instanceof Error ? error.message : error
+          );
+          throw error;
+        }
+      },
+    }),
+    Credentials({
+      id: "admin",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const email = String(credentials.email ?? "").trim().toLowerCase();
+        const password = String(credentials.password ?? "");
+
+        if (!isAdminEmail(email)) {
+          await compare(password, DUMMY_PASSWORD);
+          return null;
+        }
+
+        try {
+          const users = await getUser(email);
+
+          if (users.length === 0) {
+            await compare(password, DUMMY_PASSWORD);
+            return null;
+          }
+
+          const [dbUser] = users;
+
+          if (!dbUser.password) {
+            await compare(password, DUMMY_PASSWORD);
+            return null;
+          }
+
+          const passwordsMatch = await compare(password, dbUser.password);
+
+          if (!passwordsMatch) {
+            return null;
+          }
+
+          return {
+            ...dbUser,
+            type: "regular",
+            plan: dbUser.plan,
+            planExpiresAt: dbUser.planExpiresAt,
+            isAnonymous: false,
+          };
+        } catch (error) {
+          console.error(
+            "[auth] admin authorize failed:",
             error instanceof Error ? error.message : error
           );
           throw error;

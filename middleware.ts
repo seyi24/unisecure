@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth.middleware";
+import { isAdminEmail } from "@/lib/admin/allowed-emails";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -9,6 +10,8 @@ const PUBLIC_PATHS = [
   "/pricing",
   "/payment",
 ];
+
+const ADMIN_PUBLIC_PATHS = ["/admin/login", "/admin/auth/complete"];
 
 export default auth((req) => {
   const isAuth = !!req.auth;
@@ -21,13 +24,34 @@ export default auth((req) => {
     pathname.startsWith("/reset-password");
   const isApiAuth = pathname.startsWith("/api/auth");
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const isAdminPath = pathname.startsWith("/admin");
+  const isAdminPublicPath = ADMIN_PUBLIC_PATHS.some((path) =>
+    pathname.startsWith(path)
+  );
 
   if (isApiAuth) {
     return NextResponse.next();
   }
 
-  // Only kick fully-registered users off the auth pages.
-  // Guests must be able to upgrade their account from /login or /register.
+  if (isAdminPublicPath) {
+    return NextResponse.next();
+  }
+
+  if (isAdminPath && (!isAuth || isAnonymous)) {
+    const loginUrl = new URL("/admin/login", req.url);
+    loginUrl.searchParams.set(
+      "redirectUrl",
+      `${pathname}${req.nextUrl.search}`
+    );
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAdminPath && isAuth && !isAnonymous && !isAdminEmail(req.auth?.user?.email)) {
+    const loginUrl = new URL("/admin/login", req.url);
+    loginUrl.searchParams.set("error", "not_authorized");
+    return NextResponse.redirect(loginUrl);
+  }
+
   if (isAuth && !isAnonymous && isAuthPage) {
     return NextResponse.redirect(new URL("/", req.url));
   }
